@@ -141,7 +141,7 @@ async def upload_file(
     return {"status": "success", "document_id": doc_id, "saved_name": saved_filename}
 
 
-from transcription.transcribe import transcribe_audio
+from transcription.transcribe import transcribe_audio_file
 
 
 @app.post("/transcribe", summary="Transcribe uploaded audio")
@@ -149,7 +149,7 @@ async def transcribe_endpoint(
     audio: UploadFile = File(...),
 ):
     """
-    - Save audio to UPLOAD_DIR_AUDIO/<uuid>.<ext>, then call transcribe_audio(file_path)
+    - Save audio to UPLOAD_DIR_AUDIO/<uuid>.<ext>, then call transcribe_audio_file(file_path)
     - Return JSON: {status, filename, transcript: List[ {id, start, end, text} ]}
     """
     import uuid
@@ -168,7 +168,7 @@ async def transcribe_endpoint(
         raise HTTPException(status_code=500, detail=f"Could not save audio: {e}")
 
     try:
-        transcript = transcribe_audio(audio_path)
+        transcript = transcribe_audio_file(audio_path)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Transcription error: {e}")
 
