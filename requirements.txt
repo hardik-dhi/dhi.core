@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-dotenv
+sqlalchemy
+psycopg2-binary
+weaviate-client
+neo4j
+sentence-transformers
+spacy
+pillow
+chartocr
+pydantic
+openai-whisper
+transformers
+torch
