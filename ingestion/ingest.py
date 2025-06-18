@@ -14,7 +14,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
-from .models import Base, Document
+import sys
+
+# Ensure the metadata package is importable when running from the repo root
+METADATA_PATH = Path(__file__).resolve().parents[1] / "dhi.core"
+sys.path.insert(0, str(METADATA_PATH))
+from metadata.models import Base, Document
+sys.path.pop(0)
 
 
 class Settings(BaseSettings):
@@ -50,7 +56,8 @@ UPLOAD_DIR_PATH.mkdir(parents=True, exist_ok=True)
 engine = create_engine(get_database_url(settings), future=True)
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False, autoflush=False)
 
-Base.metadata.create_all(bind=engine)
+# Create only the Document table to avoid issues with unsupported types in tests
+Document.__table__.create(bind=engine, checkfirst=True)
 
 app = FastAPI()
 
@@ -74,10 +81,11 @@ async def upload_file(file: UploadFile = File(...)) -> JSONResponse:
 
     session = SessionLocal()
     document = Document(
+        id=str(uuid4()),
         filename=unique_name,
         original_name=original_name,
-        upload_time=datetime.utcnow(),
         media_type=file.content_type or "unknown",
+        upload_time=datetime.utcnow(),
     )
     session.add(document)
     session.commit()
