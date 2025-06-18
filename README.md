@@ -4,13 +4,19 @@ Core repo for basic functionality to be provided across projects.
 
 ## Setup
 
+
+Install the dependencies using the provided `requirements.txt` file:
+=======
 ### Python
 
 Use **Python 3.11** or higher. Create a virtual environment and install the dependencies:
 
+
 ```bash
 pip install -r requirements.txt
 ```
+
+=======
 
 ### Environment variables
 
@@ -48,3 +54,4 @@ Start the unified API with Uvicorn:
 ```bash
 uvicorn dhi.core.api.app:app --reload
 ```
+
