@@ -18,6 +18,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.types import JSON
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.schema import ForeignKey
 
@@ -33,7 +34,8 @@ class Document(Base):
     original_name = Column(String, nullable=False)
     media_type = Column(String, nullable=False)
     upload_time = Column(DateTime(timezone=True), server_default=func.now())
-    tags = Column(ARRAY(String), default=list, nullable=False)
+    # Use JSON type for SQLite where ARRAY is unsupported
+    tags = Column(ARRAY(String).with_variant(JSON, "sqlite"), default=list, nullable=False)
     processed_for_chunks = Column(Boolean, default=False)
     processed_for_graph = Column(Boolean, default=False)
 
