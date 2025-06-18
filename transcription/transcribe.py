@@ -24,6 +24,20 @@ model = whisper.load_model(settings.WHISPER_MODEL)
 
 app = FastAPI()
 
+
+def transcribe_audio_file(path: str) -> list[dict]:
+    """Transcribe an audio file and return segment dictionaries."""
+    result = model.transcribe(str(path))
+    return [
+        {
+            "id": seg.get("id"),
+            "start": seg.get("start"),
+            "end": seg.get("end"),
+            "text": seg.get("text", "").strip(),
+        }
+        for seg in result.get("segments", [])
+    ]
+
 @app.post('/transcribe')
 async def transcribe_audio(audio: UploadFile = File(...)):
     # Validate content type
@@ -42,21 +56,11 @@ async def transcribe_audio(audio: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail=f'Failed to save file: {e}')
 
     try:
-        result = model.transcribe(str(file_path))
-        segments = [
-            {
-                'id': seg.get('id'),
-                'start': seg.get('start'),
-                'end': seg.get('end'),
-                'text': seg.get('text').strip()
-            }
-            for seg in result.get('segments', [])
-        ]
+        segments = transcribe_audio_file(str(file_path))
         response = {
             'status': 'success',
             'filename': filename,
             'transcript': segments,
-            'language': result.get('language')
         }
         return JSONResponse(content=response)
     except Exception as e:

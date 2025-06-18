@@ -4,7 +4,11 @@ from pydantic import BaseSettings
 from uuid import uuid4
 from pathlib import Path
 from PIL import Image
-from transformers import VisionEncoderDecoderModel, ViTImageProcessor, AutoTokenizer
+from transformers import (
+    VisionEncoderDecoderModel,
+    ViTImageProcessor,
+    AutoTokenizer,
+)
 import torch
 
 class Settings(BaseSettings):
@@ -28,6 +32,15 @@ tokenizer = AutoTokenizer.from_pretrained(settings.IMAGE_CAPTION_MODEL)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 
+
+def generate_caption(image_path: str) -> str:
+    """Generate a caption for a local image file."""
+    img = Image.open(image_path).convert("RGB")
+    pixel_values = processor(images=img, return_tensors="pt").pixel_values.to(device)
+    output_ids = model.generate(pixel_values, num_beams=4, max_length=50)
+    caption = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
+    return caption
+
 @app.post("/caption")
 async def caption_image(image: UploadFile = File(...)):
     try:
@@ -37,10 +50,7 @@ async def caption_image(image: UploadFile = File(...)):
         content = await image.read()
         saved_path.write_bytes(content)
 
-        img = Image.open(saved_path).convert("RGB")
-        pixel_values = processor(images=img, return_tensors="pt").pixel_values.to(device)
-        output_ids = model.generate(pixel_values, num_beams=4, max_length=50)
-        caption = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
+        caption = generate_caption(str(saved_path))
         return {
             "status": "success",
             "filename": filename,
