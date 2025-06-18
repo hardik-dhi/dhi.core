@@ -13,3 +13,9 @@ dist/
 # Ignore uploaded audio files
 data/audio_uploads/*
 !data/audio_uploads/.gitkeep
+# Ignore uploaded image files
+dhi.core/data/image_uploads/*
+!dhi.core/data/image_uploads/.gitkeep
+# Ignore uploaded text files
+dhi.core/data/text_uploads/*
+!dhi.core/data/text_uploads/.gitkeep
