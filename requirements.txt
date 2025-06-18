@@ -1,0 +1,15 @@
+fastapi>=0.97
+uvicorn>=0.27
+python-dotenv>=1.0
+sqlalchemy>=1.4
+psycopg2-binary>=2.9
+pydantic>=1.10,<2.0
+weaviate-client>=4.15
+neo4j>=5.0
+sentence-transformers>=2.2
+spacy>=3.8
+Pillow>=11.0
+chartocr
+openai-whisper>=20230918
+transformers>=4.52
+torch>=2.7
