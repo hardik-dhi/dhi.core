@@ -16,6 +16,7 @@ from sqlalchemy import (
     create_engine,
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
+from metadata.models import Document
 import weaviate
 from sentence_transformers import SentenceTransformer
 
@@ -107,6 +108,40 @@ def chunk_document(text: str, max_tokens: int = 500) -> List[str]:
         chunk = " ".join(tokens[i : i + max_tokens])
         chunks.append(chunk)
     return chunks
+
+
+def process_document(document_id: str, raw_text: str) -> None:
+    """Chunk and embed a single document and store results."""
+    session = SessionLocal()
+    try:
+        chunks = chunk_document(raw_text)
+        for i, chunk_text in enumerate(chunks):
+            chunk_id = str(uuid4())
+            embedding_vector = embed_text(chunk_text)
+            client.data_object.create(
+                data_object={
+                    "id": chunk_id,
+                    "document_id": document_id,
+                    "chunk_index": i,
+                    "text_content": chunk_text,
+                },
+                class_name="Chunk",
+                vector=embedding_vector,
+            )
+            record = Chunk(
+                id=chunk_id,
+                document_id=document_id,
+                chunk_index=i,
+                text_content=chunk_text,
+            )
+            session.add(record)
+        doc = session.query(Document).filter(Document.id == document_id).first()
+        if doc:
+            doc.processed_for_chunks = True
+            session.add(doc)
+        session.commit()
+    finally:
+        session.close()
 
 
 def process_all_documents() -> None:

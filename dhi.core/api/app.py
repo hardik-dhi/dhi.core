@@ -7,7 +7,15 @@ import os
 from pathlib import Path
 from typing import List, Dict, Any
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
+from fastapi import (
+    FastAPI,
+    UploadFile,
+    File,
+    Form,
+    HTTPException,
+    Depends,
+    BackgroundTasks,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -97,10 +105,33 @@ def run_neo4j_read(cypher: str, parameters: Dict[str, Any] | None = None) -> Lis
         return [record.data() for record in result]
 
 
+def process_upload_task(document_id: str, path: str) -> None:
+    """Background task to embed chunks and build graph for a document."""
+    try:
+        text = Path(path).read_text(encoding="utf-8")
+    except Exception as exc:  # pragma: no cover - runtime issue
+        # Cannot process file without text
+        return
+
+    process_document(document_id, text)
+    build_graph()
+
+    session = SessionLocal()
+    try:
+        doc = session.query(Document).filter(Document.id == document_id).first()
+        if doc:
+            doc.processed_for_graph = True
+            session.add(doc)
+            session.commit()
+    finally:
+        session.close()
+
+
 @app.post("/upload", summary="Upload a new file to be ingested")
 async def upload_file(
     file: UploadFile = File(...),
     media_type: str = Form(...),
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     """
@@ -137,6 +168,8 @@ async def upload_file(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+    background_tasks.add_task(process_upload_task, doc_id, file_path)
 
     return {"status": "success", "document_id": doc_id, "saved_name": saved_filename}
 
@@ -245,7 +278,8 @@ async def chart_parse_endpoint(
     return {"status": "success", "filename": saved_chart, "data": parsed_data}
 
 
-from embedding.chunk_embed import embed_text
+from embedding.chunk_embed import embed_text, process_document
+from graph.graph_builder import build_graph
 
 
 @app.post("/embed-text", summary="Generate embedding for raw text")
