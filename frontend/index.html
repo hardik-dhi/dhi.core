@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DHI Transaction Analytics Dashboard</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="DHI Analytics">
+    <meta name="description" content="Advanced transaction analytics dashboard with media capture">
+    
+    <!-- PWA Icons -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    
+    <!-- External Stylesheets -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1e293b;
+            --light-color: #f8fafc;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--light-color);
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(135deg, var(--primary-color), #1d4ed8);
+            color: white;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+
+        .nav-item {
+            margin: 0.25rem 0;
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .nav-link i {
+            margin-right: 0.75rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        .top-bar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .content-area {
+            padding: 2rem;
+        }
+
+        /* Cards */
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .stat-card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        /* Status Indicators */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-online {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-offline {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+
+        .status-loading {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+
+        /* Media Upload Area */
+        .upload-area {
+            background: white;
+            border: 2px dashed #e2e8f0;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.02);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        /* Camera Controls */
+        .camera-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        #videoElement {
+            width: 100%;
+            max-width: 640px;
+            border-radius: 8px;
+            background: #000;
+        }
+
+        .camera-controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Audio Recording */
+        .audio-controls {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .record-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            font-size: 2rem;
+            color: white;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .record-button.recording {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .content-area {
+                padding: 1rem;
+            }
+
+            .top-bar {
+                padding: 1rem;
+            }
+
+            .camera-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        /* Data Table */
+        .data-table {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .table th {
+            background: var(--light-color);
+            border: none;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .table td {
+            border: none;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+
+        /* Button Styles */
+        .btn-primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            border-color: var(--warning-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h4 class="mb-0">
+                <i class="fas fa-chart-line me-2"></i>
+                DHI Analytics
+            </h4>
+        </div>
+        <div class="sidebar-nav">
+            <button class="nav-link active" data-section="dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                Dashboard
+            </button>
+            <button class="nav-link" data-section="analytics">
+                <i class="fas fa-chart-bar"></i>
+                Analytics
+            </button>
+            <button class="nav-link" data-section="status">
+                <i class="fas fa-server"></i>
+                API Status
+            </button>
+            <button class="nav-link" data-section="media">
+                <i class="fas fa-camera"></i>
+                Media Capture
+            </button>
+            <button class="nav-link" data-section="upload">
+                <i class="fas fa-upload"></i>
+                File Upload
+            </button>
+            <button class="nav-link" data-section="audio">
+                <i class="fas fa-microphone"></i>
+                Audio Recording
+            </button>
+            <button class="nav-link" data-section="llm-query">
+                <i class="fas fa-brain"></i>
+                AI Query
+            </button>
+            <button class="nav-link" data-section="databases">
+                <i class="fas fa-database"></i>
+                Databases
+            </button>
+            <button class="nav-link" data-section="transactions">
+                <i class="fas fa-credit-card"></i>
+                Transactions
+            </button>
+            <button class="nav-link" data-section="settings">
+                <i class="fas fa-cog"></i>
+                Settings
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-link d-md-none" id="toggleSidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h5 class="mb-0 ms-2" id="pageTitle">Dashboard</h5>
+            </div>
+            <div class="d-flex align-items-center">
+                <span class="status-indicator me-3" id="connectionStatus">
+                    <i class="fas fa-circle me-1"></i>
+                    Checking...
+                </span>
+                <div class="dropdown">
+                    <button class="btn btn-link" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle fs-4"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="content-section">
+                <div class="row mb-4">
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-card-icon" style="background: var(--primary-color);">
+                                <i class="fas fa-credit-card"></i>
+                            </div>
+                            <h3 class="mb-1" id="totalTransactions">-</h3>
+                            <p class="text-muted mb-0">Total Transactions</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-card-icon" style="background: var(--success-color);">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <h3 class="mb-1" id="totalAmount">-</h3>
+                            <p class="text-muted mb-0">Total Amount</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-card-icon" style="background: var(--warning-color);">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <h3 class="mb-1" id="totalMerchants">-</h3>
+                            <p class="text-muted mb-0">Unique Merchants</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <div class="stat-card">
+                            <div class="stat-card-icon" style="background: var(--danger-color);">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <h3 class="mb-1" id="anomalies">-</h3>
+                            <p class="text-muted mb-0">Anomalies Detected</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="chart-container">
+                            <h5 class="mb-3">Spending by Category</h5>
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-4">
+                        <div class="chart-container">
+                            <h5 class="mb-3">Monthly Trends</h5>
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Section -->
+            <div id="analytics-section" class="content-section" style="display: none;">
+                <div class="row">
+                    <div class="col-12 mb-4">
+                        <div class="chart-container">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Advanced Analytics</h5>
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-outline-primary active" onclick="showAnalytics('spending')">Spending</button>
+                                    <button class="btn btn-outline-primary" onclick="showAnalytics('merchants')">Merchants</button>
+                                    <button class="btn btn-outline-primary" onclick="showAnalytics('anomalies')">Anomalies</button>
+                                </div>
+                            </div>
+                            <div id="analyticsContent">
+                                <canvas id="analyticsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Status Section -->
+            <div id="status-section" class="content-section" style="display: none;">
+                <div class="row">
+                    <div class="col-lg-6 mb-4">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-server me-2"></i>
+                                Plaid API Service
+                            </h5>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span>Status:</span>
+                                <span class="status-indicator" id="plaidApiStatus">
+                                    <i class="fas fa-circle me-1"></i>
+                                    Checking...
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span>Endpoint:</span>
+                                <code>http://localhost:8080</code>
+                            </div>
+                            <button class="btn btn-primary" onclick="checkApiStatus()">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                Refresh Status
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-database me-2"></i>
+                                Neo4j Database
+                            </h5>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span>Status:</span>
+                                <span class="status-indicator" id="neo4jStatus">
+                                    <i class="fas fa-circle me-1"></i>
+                                    Checking...
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span>Endpoint:</span>
+                                <code>bolt://localhost:7687</code>
+                            </div>
+                            <button class="btn btn-primary" onclick="checkNeo4jStatus()">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                Refresh Status
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-list me-2"></i>
+                                System Logs
+                            </h5>
+                            <div id="systemLogs" style="height: 300px; overflow-y: auto; background: #f8f9fa; padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.875rem;">
+                                <div class="text-muted">Loading system logs...</div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-outline-primary" onclick="refreshLogs()">
+                                    <i class="fas fa-sync-alt me-2"></i>
+                                    Refresh Logs
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="clearLogs()">
+                                    <i class="fas fa-trash me-2"></i>
+                                    Clear Logs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Media Capture Section -->
+            <div id="media-section" class="content-section" style="display: none;">
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="camera-container">
+                            <h5 class="mb-3">
+                                <i class="fas fa-camera me-2"></i>
+                                Camera Capture
+                            </h5>
+                            <video id="videoElement" autoplay playsinline></video>
+                            <canvas id="captureCanvas" style="display: none;"></canvas>
+                            <div class="camera-controls">
+                                <button class="btn btn-primary" id="startCamera">
+                                    <i class="fas fa-video me-2"></i>
+                                    Start Camera
+                                </button>
+                                <button class="btn btn-success" id="capturePhoto" style="display: none;">
+                                    <i class="fas fa-camera me-2"></i>
+                                    Take Photo
+                                </button>
+                                <button class="btn btn-danger" id="stopCamera" style="display: none;">
+                                    <i class="fas fa-stop me-2"></i>
+                                    Stop Camera
+                                </button>
+                                <button class="btn btn-secondary" id="switchCamera" style="display: none;">
+                                    <i class="fas fa-sync-alt me-2"></i>
+                                    Switch Camera
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-4">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-images me-2"></i>
+                                Captured Photos
+                            </h5>
+                            <div id="capturedPhotos" class="row g-2">
+                                <div class="col-12 text-center text-muted">
+                                    No photos captured yet
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Upload Section -->
+            <div id="upload-section" class="content-section" style="display: none;">
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-upload me-2"></i>
+                                File Upload
+                            </h5>
+                            <div class="upload-area" id="uploadArea">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                <h6>Drag and drop files here</h6>
+                                <p class="text-muted mb-3">or click to select files</p>
+                                <input type="file" id="fileInput" multiple accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.txt,.csv,.json" style="display: none;">
+                                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-folder-open me-2"></i>
+                                    Select Files
+                                </button>
+                            </div>
+                            <div id="uploadProgress" style="display: none;" class="mt-3">
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-4">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-file me-2"></i>
+                                Uploaded Files
+                            </h5>
+                            <div id="uploadedFiles">
+                                <div class="text-center text-muted">
+                                    No files uploaded yet
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio Recording Section -->
+            <div id="audio-section" class="content-section" style="display: none;">
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="audio-controls">
+                            <h5 class="mb-4">
+                                <i class="fas fa-microphone me-2"></i>
+                                Audio Recording
+                            </h5>
+                            <div class="mb-4">
+                                <button class="record-button btn btn-danger" id="recordButton" style="background: var(--danger-color);">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                            </div>
+                            <div id="recordingStatus" class="mb-3">
+                                <span class="text-muted">Ready to record</span>
+                            </div>
+                            <div id="audioControls" style="display: none;" class="d-flex justify-content-center gap-3">
+                                <button class="btn btn-primary" id="playButton">
+                                    <i class="fas fa-play me-2"></i>
+                                    Play
+                                </button>
+                                <button class="btn btn-success" id="saveButton">
+                                    <i class="fas fa-save me-2"></i>
+                                    Save
+                                </button>
+                                <button class="btn btn-danger" id="deleteButton">
+                                    <i class="fas fa-trash me-2"></i>
+                                    Delete
+                                </button>
+                            </div>
+                            <audio id="audioPlayback" controls style="display: none; width: 100%; margin-top: 1rem;"></audio>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-4">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-list me-2"></i>
+                                Recordings
+                            </h5>
+                            <div id="recordingsList">
+                                <div class="text-center text-muted">
+                                    No recordings available
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Section -->
+            <div id="transactions-section" class="content-section" style="display: none;">
+                <div class="row">
+                    <div class="col-12 mb-4">
+                        <div class="data-table">
+                            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-credit-card me-2"></i>
+                                    Recent Transactions
+                                </h5>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-primary" onclick="refreshTransactions()">
+                                        <i class="fas fa-sync-alt me-2"></i>
+                                        Refresh
+                                    </button>
+                                    <button class="btn btn-primary" onclick="exportTransactions()">
+                                        <i class="fas fa-download me-2"></i>
+                                        Export
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Amount</th>
+                                            <th>Category</th>
+                                            <th>Merchant</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="transactionsTableBody">
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">Loading transactions...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+
+            <!-- LLM Query Section -->
+            <div id="llm-query-section" class="content-section" style="display: none;">
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-brain me-2"></i>
+                                AI-Powered Data Query
+                            </h5>
+                            <p class="text-muted mb-3">Ask questions about your financial data in natural language. Our AI will convert your query into database operations and provide insights.</p>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Database Connection</label>
+                                <select class="form-select" id="llmDatabaseSelect">
+                                    <option value="sqlite_default">Local SQLite Database</option>
+                                    <option value="neo4j_default">Neo4j Graph Database</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Natural Language Query</label>
+                                <div class="input-group">
+                                    <textarea class="form-control" id="llmQueryInput" rows="3" 
+                                              placeholder="Ask questions like: 'Show me my spending by category this month' or 'Find unusual transactions over $500'"></textarea>
+                                    <button class="btn btn-primary" id="executeLLMQuery">
+                                        <i class="fas fa-search me-1"></i>
+                                        Ask AI
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6>Query Examples:</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button class="btn btn-outline-secondary btn-sm query-example" 
+                                            data-query="What were my top 5 expenses last month?">
+                                        Top 5 Expenses
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm query-example" 
+                                            data-query="Show me spending trends over the last 3 months">
+                                        Spending Trends
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm query-example" 
+                                            data-query="Find transactions over $200 at restaurants">
+                                        Large Restaurant Bills
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm query-example" 
+                                            data-query="Which merchant do I spend the most money at?">
+                                        Top Merchant
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="llmQueryResults" style="display: none;">
+                                <hr>
+                                <h6>AI Response:</h6>
+                                <div class="bg-light p-3 rounded mb-3">
+                                    <div id="llmInterpretation"></div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Generated Query:</h6>
+                                        <pre class="bg-dark text-light p-2 rounded"><code id="llmGeneratedQuery"></code></pre>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Execution Details:</h6>
+                                        <ul class="list-unstyled">
+                                            <li><strong>Query Type:</strong> <span id="llmQueryType"></span></li>
+                                            <li><strong>Execution Time:</strong> <span id="llmExecutionTime"></span>ms</li>
+                                            <li><strong>Rows Returned:</strong> <span id="llmRowCount"></span></li>
+                                            <li><strong>Confidence:</strong> <span id="llmConfidence"></span>%</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div id="llmDataVisualization" class="mt-3"></div>
+                            </div>
+                            
+                            <div id="llmQueryLoading" class="text-center" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Processing query...</span>
+                                </div>
+                                <p class="mt-2">AI is analyzing your query and generating results...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 mb-4">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                Query History
+                            </h5>
+                            <div id="llmQueryHistory" class="query-history">
+                                <!-- Query history will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database Management Section -->
+            <div id="databases-section" class="content-section" style="display: none;">
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-database me-2"></i>
+                                    Database Connections
+                                </h5>
+                                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addDatabaseModal">
+                                    <i class="fas fa-plus me-1"></i>
+                                    Add Connection
+                                </button>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>Host</th>
+                                            <th>Status</th>
+                                            <th>Last Connected</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="databaseConnectionsList">
+                                        <!-- Database connections will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 mb-4">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-terminal me-2"></i>
+                                Direct Query
+                            </h5>
+                            <div class="mb-3">
+                                <label class="form-label">Database</label>
+                                <select class="form-select" id="directQueryDatabase">
+                                    <option value="">Select database...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Query</label>
+                                <textarea class="form-control" id="directQueryText" rows="4" 
+                                          placeholder="Enter SQL, Cypher, or other query..."></textarea>
+                            </div>
+                            <button class="btn btn-warning w-100" id="executeDirectQuery">
+                                <i class="fas fa-play me-1"></i>
+                                Execute Query
+                            </button>
+                            
+                            <div id="directQueryResults" class="mt-3" style="display: none;">
+                                <h6>Results:</h6>
+                                <div class="bg-light p-2 rounded">
+                                    <pre id="directQueryOutput"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Database Performance
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h4 class="text-primary" id="totalConnections">0</h4>
+                                        <p class="text-muted mb-0">Total Connections</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h4 class="text-success" id="activeConnections">0</h4>
+                                        <p class="text-muted mb-0">Active</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h4 class="text-warning" id="avgResponseTime">0ms</h4>
+                                        <p class="text-muted mb-0">Avg Response</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <h4 class="text-info" id="totalQueries">0</h4>
+                                        <p class="text-muted mb-0">Queries Today</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div id="settings-section" class="content-section" style="display: none;">
+                <div class="row">
+                    <div class="col-lg-6 mb-4">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-cog me-2"></i>
+                                API Configuration
+                            </h5>
+                            <div class="mb-3">
+                                <label class="form-label">Plaid API URL</label>
+                                <input type="text" class="form-control" id="plaidApiUrl" value="http://localhost:8080">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Neo4j URL</label>
+                                <input type="text" class="form-control" id="neo4jUrl" value="bolt://localhost:7687">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Refresh Interval (seconds)</label>
+                                <input type="number" class="form-control" id="refreshInterval" value="30">
+                            </div>
+                            <button class="btn btn-primary" onclick="saveSettings()">
+                                <i class="fas fa-save me-2"></i>
+                                Save Settings
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="fas fa-palette me-2"></i>
+                                Theme & Display
+                            </h5>
+                            <div class="mb-3">
+                                <label class="form-label">Theme</label>
+                                <select class="form-select" id="themeSelect">
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                    <option value="auto">Auto</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="enableNotifications" checked>
+                                    <label class="form-check-label" for="enableNotifications">
+                                        Enable Notifications
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                                    <label class="form-check-label" for="autoRefresh">
+                                        Auto Refresh Data
+                                    </label>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="saveDisplaySettings()">
+                                <i class="fas fa-save me-2"></i>
+                                Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Database Connection Modal -->
+    <div class="modal fade" id="addDatabaseModal" tabindex="-1" aria-labelledby="addDatabaseModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addDatabaseModalLabel">
+                        <i class="fas fa-database me-2"></i>
+                        Add Database Connection
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDatabaseForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="dbName" class="form-label">Connection Name</label>
+                                <input type="text" class="form-control" id="dbName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="dbType" class="form-label">Database Type</label>
+                                <select class="form-select" id="dbType" required>
+                                    <option value="">Select type...</option>
+                                    <option value="postgresql">PostgreSQL</option>
+                                    <option value="mysql">MySQL</option>
+                                    <option value="sqlite">SQLite</option>
+                                    <option value="neo4j">Neo4j</option>
+                                    <option value="redis">Redis</option>
+                                    <option value="mongodb">MongoDB</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="dbHost" class="form-label">Host</label>
+                                <input type="text" class="form-control" id="dbHost" value="localhost" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="dbPort" class="form-label">Port</label>
+                                <input type="number" class="form-control" id="dbPort" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dbDatabase" class="form-label">Database Name</label>
+                            <input type="text" class="form-control" id="dbDatabase" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="dbUsername" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="dbUsername">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="dbPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="dbPassword">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="dbSSL">
+                                <label class="form-check-label" for="dbSSL">
+                                    Use SSL Connection
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" id="testDatabaseConnection">
+                        <i class="fas fa-flask me-1"></i>
+                        Test Connection
+                    </button>
+                    <button type="button" class="btn btn-primary" id="saveDatabaseConnection">
+                        <i class="fas fa-save me-1"></i>
+                        Save Connection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.0.0/dist/chart.min.js"></script>
+    <script src="dashboard.js"></script>
+    
+    <!-- PWA Registration -->
+    <script>
+        // Register service worker for PWA functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+        
+        // Handle PWA install prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button or banner
+            const installBanner = document.createElement('div');
+            installBanner.className = 'alert alert-info alert-dismissible fade show position-fixed';
+            installBanner.style.cssText = 'top: 70px; right: 20px; z-index: 9999; max-width: 300px;';
+            installBanner.innerHTML = `
+                <i class="fas fa-download me-2"></i>
+                Install DHI Analytics as an app
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="mt-2">
+                    <button class="btn btn-primary btn-sm" onclick="installPWA()">Install</button>
+                </div>
+            `;
+            document.body.appendChild(installBanner);
+        });
+        
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+    </script>
+</body>
+</html>

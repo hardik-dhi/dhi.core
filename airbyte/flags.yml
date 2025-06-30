@@ -1,0 +1,23 @@
+# Airbyte Feature Flags Configuration
+# Enable/disable various Airbyte features
+
+# UI/UX Features
+use-new-ui: true
+enable-connection-builder: true
+enable-workspaces: true
+
+# Connector Features  
+enable-custom-connectors: true
+enable-http-source: true
+
+# Data Processing
+enable-normalization: true
+enable-basic-normalization: true
+
+# Performance
+enable-stream-capable-state: true
+enable-refreshes: true
+
+# Development
+enable-logs-ui: true
+log-connector-messages: true

@@ -1,0 +1,23 @@
+{
+  "destinationDefinitionId": "25c5221d-dce2-4163-ade9-739ef790f503",
+  "connectionConfiguration": {
+    "host": "host.docker.internal",
+    "port": 5432,
+    "database": "postgres",
+    "schema": "airbyte_plaid",
+    "username": "postgres",
+    "password": "postgres",
+    "ssl": false,
+    "ssl_mode": {
+      "mode": "disable"
+    },
+    "jdbc_url_params": "",
+    "raw_data_schema": "airbyte_internal",
+    "loading_method": {
+      "method": "Standard"
+    },
+    "normalization": {
+      "option": "basic"
+    }
+  }
+}

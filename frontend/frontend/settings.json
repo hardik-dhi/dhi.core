@@ -1,0 +1,7 @@
+{
+  "plaid_api_url": "http://localhost:8080",
+  "neo4j_url": "bolt://localhost:7687",
+  "refresh_interval": 30,
+  "theme": "light",
+  "test_setting": true
+}

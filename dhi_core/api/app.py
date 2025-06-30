@@ -347,6 +347,14 @@ def list_document_chunks(document_id: str, db: Session = Depends(get_db)):
     return {"status": "success", "chunks": chunks}
 
 
+# Include plaid router
+from .plaid.api import router as plaid_router
+app.include_router(plaid_router)
+
+# Include plaid router
+from dhi.core.plaid.api import router as plaid_router
+app.include_router(plaid_router)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,

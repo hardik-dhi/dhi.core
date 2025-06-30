@@ -1,0 +1,49 @@
+{
+  "database_connections": [
+    {
+      "id": "sqlite_default",
+      "name": "Local SQLite Database",
+      "type": "DatabaseType.SQLITE",
+      "host": "localhost",
+      "port": 0,
+      "database": "data/transactions.db",
+      "username": "",
+      "password": "",
+      "ssl": false,
+      "connection_string": null,
+      "is_active": false,
+      "last_connected": null,
+      "metadata": {}
+    },
+    {
+      "id": "neo4j_default",
+      "name": "Neo4j Graph Database",
+      "type": "DatabaseType.NEO4J",
+      "host": "localhost",
+      "port": 7687,
+      "database": "neo4j",
+      "username": "neo4j",
+      "password": "password",
+      "ssl": false,
+      "connection_string": null,
+      "is_active": false,
+      "last_connected": null,
+      "metadata": {}
+    },
+    {
+      "id": "postgres_default",
+      "name": "PostgreSQL Database",
+      "type": "DatabaseType.POSTGRESQL",
+      "host": "localhost",
+      "port": 5432,
+      "database": "postgres",
+      "username": "postgres",
+      "password": "postgres",
+      "ssl": false,
+      "connection_string": null,
+      "is_active": false,
+      "last_connected": null,
+      "metadata": {}
+    }
+  ]
+}

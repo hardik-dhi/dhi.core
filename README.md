@@ -55,3 +55,43 @@ Start the unified API with Uvicorn:
 uvicorn dhi.core.api.app:app --reload
 ```
 
+## Quick Start (Recommended)
+
+Using the Makefile for automated setup:
+
+```bash
+# Complete setup with virtual environment
+make setup
+source venv/bin/activate
+
+# Start the API server
+make dev
+```
+
+## Testing the System
+
+### Quick Functionality Test
+```bash
+# Test core functionalities (API must be running)
+python scripts/quick_test.py
+```
+
+### Comprehensive Testing
+```bash
+# Run all tests including database and integrations
+python scripts/test_system_comprehensive.py
+
+# Run unit tests
+make test
+```
+
+### Manual Testing
+- **API Documentation**: Visit `http://localhost:8000/docs`
+- **Frontend Dashboard**: Visit `http://localhost:8081` (if frontend is running)
+
+## Documentation
+
+- **[Current Status](CURRENT_STATUS.md)** - Overview of implemented features
+- **[Testing Guide](TESTING_GUIDE.md)** - Comprehensive testing strategies  
+- **[Future Roadmap](FUTURE_ROADMAP.md)** - Development roadmap and goals
+- **[Production Guide](PRODUCTION_GUIDE.md)** - Deployment and production setup

@@ -1,0 +1,106 @@
+{
+  "sourceDefinitionId": "778daa7c-feaf-4db6-96f3-70fd645acc77",
+  "connectionConfiguration": {
+    "name": "Plaid Transactions Source",
+    "base_url": "http://plaid-api:8080",
+    "streams": [
+      {
+        "name": "accounts",
+        "http_method": "GET",
+        "url_path": "/accounts",
+        "primary_key": ["account_id"],
+        "pagination": {
+          "type": "offset",
+          "limit_option": {
+            "field_name": "limit",
+            "inject_into": "request_parameter"
+          },
+          "offset_option": {
+            "field_name": "offset",
+            "inject_into": "request_parameter"
+          }
+        },
+        "record_selector": {
+          "field_path": ["data"]
+        },
+        "schema": {
+          "type": "object",
+          "properties": {
+            "account_id": {"type": "string"},
+            "access_token": {"type": "string"},
+            "item_id": {"type": "string"},
+            "name": {"type": "string"},
+            "type": {"type": "string"},
+            "subtype": {"type": ["string", "null"]},
+            "institution_name": {"type": ["string", "null"]},
+            "mask": {"type": ["string", "null"]},
+            "created_at": {"type": ["string", "null"], "format": "date-time"},
+            "updated_at": {"type": ["string", "null"], "format": "date-time"},
+            "_airbyte_extracted_at": {"type": "string", "format": "date-time"}
+          }
+        }
+      },
+      {
+        "name": "transactions",
+        "http_method": "GET",
+        "url_path": "/transactions",
+        "primary_key": ["transaction_id"],
+        "cursor_field": ["updated_at"],
+        "source_defined_cursor": true,
+        "pagination": {
+          "type": "offset",
+          "limit_option": {
+            "field_name": "limit",
+            "inject_into": "request_parameter"
+          },
+          "offset_option": {
+            "field_name": "offset",
+            "inject_into": "request_parameter"
+          }
+        },
+        "record_selector": {
+          "field_path": ["data"]
+        },
+        "incremental_sync": {
+          "type": "datetime",
+          "cursor_field": "updated_at",
+          "datetime_format": "%Y-%m-%dT%H:%M:%S.%fZ",
+          "cursor_granularity": "PT1S"
+        },
+        "schema": {
+          "type": "object",
+          "properties": {
+            "transaction_id": {"type": "string"},
+            "account_id": {"type": "string"},
+            "amount": {"type": "number"},
+            "date": {"type": "string", "format": "date"},
+            "name": {"type": "string"},
+            "merchant_name": {"type": ["string", "null"]},
+            "category": {"type": ["string", "null"]},
+            "subcategory": {"type": ["string", "null"]},
+            "account_owner": {"type": ["string", "null"]},
+            "authorized_date": {"type": ["string", "null"], "format": "date"},
+            "location": {
+              "type": "object",
+              "properties": {
+                "address": {"type": ["string", "null"]},
+                "city": {"type": ["string", "null"]},
+                "region": {"type": ["string", "null"]},
+                "postal_code": {"type": ["string", "null"]},
+                "country": {"type": ["string", "null"]}
+              }
+            },
+            "iso_currency_code": {"type": ["string", "null"]},
+            "unofficial_currency_code": {"type": ["string", "null"]},
+            "check_number": {"type": ["string", "null"]},
+            "reference_number": {"type": ["string", "null"]},
+            "original_description": {"type": ["string", "null"]},
+            "created_at": {"type": ["string", "null"], "format": "date-time"},
+            "updated_at": {"type": ["string", "null"], "format": "date-time"},
+            "_airbyte_extracted_at": {"type": "string", "format": "date-time"}
+          }
+        }
+      }
+    ]
+  }
+}

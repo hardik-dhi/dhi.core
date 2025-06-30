@@ -1,0 +1,41 @@
+# Temporal Dynamic Configuration for Airbyte
+# This file configures Temporal workflow engine settings
+
+# Worker settings
+system.worker.persistActivity: true
+system.worker.enableLogging: true
+
+# Workflow settings
+system.workflow.reapplyExcludedEvents: true
+system.enableDebugMode: false
+
+# History service settings
+system.advancedVisibilityWritingMode: "off"
+system.enableReadVisibilityFromES: false
+
+# Limits
+system.blob.maxSize: 
+  - value: 2000000
+    constraints: {}
+
+system.history.maxPageSize:
+  - value: 1000
+    constraints: {}
+
+# Frontend settings
+frontend.enableUpdateWorkflowExecution: true
+frontend.disallowQuery: false
+
+# Matching service settings  
+matching.numTaskqueueReadPartitions:
+  - value: 4
+    constraints: {}
+
+matching.numTaskqueueWritePartitions:
+  - value: 4
+    constraints: {}
+
+# History service limits
+history.maxWorkflowLength: 
+  - value: 50000
+    constraints: {}
